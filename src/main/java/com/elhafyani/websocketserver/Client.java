@@ -1,4 +1,4 @@
-package com.mycompany.app;
+package com.elhafyani.websocketserver;
 
 import java.net.Socket;
 
@@ -10,4 +10,8 @@ public class Client {
     public Socket socket;
 
     public boolean isConnected;
+
+    public Client(Socket socket) {
+        this.socket = socket;
+    }
 }

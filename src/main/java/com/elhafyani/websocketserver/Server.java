@@ -1,4 +1,4 @@
-package com.mycompany.app;
+package com.elhafyani.websocketserver;
 
 import com.sun.media.jfxmedia.logging.Logger;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Hello world!
@@ -47,9 +45,9 @@ public class Server
         while(true){
 
             try {
-                Socket client = masterSocket.accept();
-
-                clientProcessor.sockets.put(UUID.randomUUID().toString(), client);
+                Socket socket = masterSocket.accept();
+                Client client = new Client(socket);
+                clientProcessor.clients.put(UUID.randomUUID().toString(), client);
 
                 System.out.println(numberThread++);
             }catch(IOException ex){

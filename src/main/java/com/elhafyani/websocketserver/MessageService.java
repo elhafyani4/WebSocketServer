@@ -1,4 +1,4 @@
-package com.mycompany.app;
+package com.elhafyani.websocketserver;
 
 /**
  * Created by yelhafyani on 1/27/2017.
