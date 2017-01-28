@@ -4,9 +4,6 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-
 /**
  * Unit test for simple App.
  */
@@ -36,10 +33,8 @@ public class AppTest
      */
     public void testApp()
     {
-        byte[] byteBarray = ByteBuffer.allocate(2).putShort((short) 65535).array();
-        System.out.println(byteBarray.length);
-        short result =  ByteBuffer.wrap(byteBarray).getShort();
-
-        assertEquals( result ,  (short)65535);
+//        byte[] x = new byte[]{0b01111111, 0b01111111};
+//
+//        assertEquals( result ,  (short)65535);
     }
 }

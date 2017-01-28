@@ -13,6 +13,8 @@ public class Client {
 
     public Status status;
 
+    public byte[] clientData;
+
     public Client(Socket socket) {
         this.socket = socket;
         this.status = Status.READY;
