@@ -11,7 +11,10 @@ public class Client {
 
     public boolean isConnected;
 
+    public Status status;
+
     public Client(Socket socket) {
         this.socket = socket;
+        this.status = Status.READY;
     }
 }

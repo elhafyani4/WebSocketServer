@@ -1,8 +1,11 @@
 package com.elhafyani.websocketserver;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,7 +16,7 @@ import java.util.regex.Pattern;
 public class SocketRequestHandler implements Runnable {
 
     private DataInputStream is;
-    private DataOutputStream os;
+    private OutputStream os;
     private Client client;
     private static final String HASH = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     private static final byte[] PONG_BYTES = new byte[]{(byte) 0x8A, 0x00};
@@ -23,7 +26,7 @@ public class SocketRequestHandler implements Runnable {
         this.client = client;
         try {
             is = new DataInputStream(client.socket.getInputStream());
-            os = new DataOutputStream(client.socket.getOutputStream());
+            os = client.socket.getOutputStream();
         } catch (IOException exception) {
 
         }
@@ -34,10 +37,11 @@ public class SocketRequestHandler implements Runnable {
         try {
             if (!client.isConnected) {
                 doHandShake();
-                return;
+            }else {
+                processRequest();
             }
 
-            processRequest();
+            client.status = Status.READY;
 
         } catch (IOException ex) {
 
@@ -48,27 +52,56 @@ public class SocketRequestHandler implements Runnable {
 
     public void processRequest() throws IOException {
         int available = is.available();
-        byte[] data = new byte[available];
-        is.read(data, 0, available);
-        is.mark(available);
-        int isFin = (data[0] >> 7) & 1;
+        System.out.println(available);
+        if(available > 0) {
+            byte[] frame = new byte[available];
+            is.read(frame, 0, available);
+            is.mark(available);
+            int isFin = 0;
 
-        //read opcode
-        switch (data[0] & 0x0f) {
-            case 9:
-                sendPong();
-                break;
-            case 0: //continuous
-                break;
-            case 1: //text
+            //read opcode
+            switch (frame[0] & 0x0f) {
+                case 9:
+                    sendPong();
+                    break;
+                case 0: //continuous
+                    break;
+                case 1: //text
+                    isFin = (frame[0] >>> 7);
+                    byte[] key = null,data = null,d = null;
+                    if((frame[1]&0x7F) == 125){
+                        key = Arrays.copyOfRange(frame, 2, 6);
+                        data = Arrays.copyOfRange(frame, 6, available);
+                        d = new byte[data.length];
+                    }else if((frame[1]&0x7F) == 126){
+                        byte[] length = Arrays.copyOfRange(frame, 2, 4);
+                        int dataLength = ByteBuffer.wrap(length).getShort();
+                        key = Arrays.copyOfRange(frame, 4, 8);
+                        data = Arrays.copyOfRange(frame, 8, available);
+                        d = new byte[dataLength];
+                    }else if((frame[1]&0x7F) == 127){
+                        byte[] length = Arrays.copyOfRange(frame, 2, 10);
+                        long dataLength = ByteBuffer.wrap(length).getShort();
+                        key = Arrays.copyOfRange(frame, 10, 14);
+                        data = Arrays.copyOfRange(frame, 14, available);
+                        d = new byte[(int)dataLength];
+                    }
 
-                break;
-            case 2: //binary
-                break;
-            case 8:
-                closeConnection();
-                break;
-        }
+
+                    for (int k = 0; k < data.length; k++) {
+                        d[k] = (byte) (data[k] ^ key[k & 0x3]);
+                    }
+                    String response = new String(d);
+                    System.out.println(response);
+
+                    sendResponse(d, MessageType.TEXT);
+                    break;
+                case 2: //binary
+                    break;
+                case 8:
+                    closeConnection();
+                    break;
+            }
 
 
 //
@@ -79,9 +112,10 @@ public class SocketRequestHandler implements Runnable {
 //            byte[] data = Arrays.copyOfRange(v, 6, available);
 //            byte[] d = new byte[data.length];
 //        }
+        }
     }
 
-    private void sendResponse(byte[] message, MessageType messageType) {
+    private void sendResponse(byte[] message, MessageType messageType) throws IOException {
         byte firstByte = 0;
         switch (messageType) {
             case CONTINOUS:
@@ -107,12 +141,34 @@ public class SocketRequestHandler implements Runnable {
         int messageLength = message.length;
         byte secondByte = 0;
 
-
+        byte[] frameHeader;
         if(messageLength < 126){
             secondByte = (byte)messageLength;
+            frameHeader = new byte[] { firstByte, secondByte};
+            os.write(frameHeader);
         }else if(messageLength <= 65536){
             secondByte = 126;
+            frameHeader = new byte[] { firstByte, secondByte, (byte)(messageLength >>> 8), (byte)(messageLength >>> 0)};
+            os.write(frameHeader);
+        }else{
+            secondByte = 127;
+            long longLengthByte = (long)messageLength;
+            frameHeader = new byte[] {
+                    firstByte,
+                    secondByte ,
+                    (byte)(longLengthByte >>> 56),
+                    (byte)(longLengthByte >>> 48),
+                    (byte)(longLengthByte >>> 40),
+                    (byte)(longLengthByte >>> 32),
+                    (byte)(longLengthByte >>> 24),
+                    (byte)(longLengthByte >>> 16),
+                    (byte)(longLengthByte >>> 8),
+                    (byte)(longLengthByte >>> 0)
+            };
+            os.write(frameHeader);
+
         }
+        os.write(message);
     }
 
     private void closeConnection() throws IOException {
@@ -134,10 +190,11 @@ public class SocketRequestHandler implements Runnable {
         String webSocketKey = getWebSocketKey(is);
         String key = webSocketKey + HASH;
         String handShakeAcceptKey = Base64.getEncoder().encodeToString(sha1(key));
-        os.writeBytes("HTTP/1.1 101 Switching Protocols\r\n");
-        os.writeBytes("Connection: Upgrade\r\n");
-        os.writeBytes("Upgrade: websocket\r\n");
-        os.writeBytes("Sec-WebSocket-Accept: " + handShakeAcceptKey + "\r\n\r\n");
+        os.write("HTTP/1.1 101 Switching Protocols\r\n".getBytes(Charset.forName("UTF-8")));
+        os.write("Connection: Upgrade\r\n".getBytes(Charset.forName("UTF-8")));
+        os.write("Upgrade: websocket\r\n".getBytes(Charset.forName("UTF-8")));
+        os.write(("Sec-WebSocket-Accept: " + handShakeAcceptKey + "\r\n\r\n").getBytes(Charset.forName("UTF-8")));
+        os.flush();
         client.isConnected = true;
     }
 

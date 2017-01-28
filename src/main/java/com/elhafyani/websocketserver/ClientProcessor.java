@@ -22,9 +22,12 @@ public class ClientProcessor implements Runnable {
     @Override
     public void run() {
         while(true) {
+
             for (Client client : clients.values()) {
                 try {
-                    if (client.socket.getInputStream().available() > 0) {
+                    if (client.socket.getInputStream().available() > 0 && client.status == Status.READY) {
+                        System.out.println("Checking if there is some thing");
+                        client.status = Status.PROCESSING;
                         SocketRequestHandler handler = new SocketRequestHandler(client);
                         executor.execute(handler);
                     }
