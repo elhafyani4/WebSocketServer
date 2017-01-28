@@ -1,7 +1,5 @@
 package com.elhafyani.websocketserver;
 
-import com.sun.media.jfxmedia.logging.Logger;
-
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -24,7 +22,6 @@ public class ClientProcessor implements Runnable {
     @Override
     public void run() {
         while(true) {
-
             for (Client client : clients.values()) {
                 try {
                     if (client.socket.getInputStream().available() > 0 && client.status == Status.READY) {
@@ -33,12 +30,9 @@ public class ClientProcessor implements Runnable {
                         executor.execute(handler);
                     }
                 } catch (IOException ex) {
-                    Logger.logMsg(Logger.ERROR, ex.getStackTrace().toString());
+
                 }
             }
         }
     }
-
-
-
 }

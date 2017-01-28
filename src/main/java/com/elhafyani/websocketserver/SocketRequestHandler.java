@@ -21,6 +21,7 @@ public class SocketRequestHandler implements Runnable {
     private DataInputStream is;
     private OutputStream os;
     private Client client;
+    private byte[] receivedData = new byte[0];
 
     public SocketRequestHandler(Client client) {
         this.client = client;
@@ -55,6 +56,14 @@ public class SocketRequestHandler implements Runnable {
         return null;
     }
 
+    public static byte[] combine(byte[] a, byte[] b) {
+        int length = a.length + b.length;
+        byte[] result = new byte[length];
+        System.arraycopy(a, 0, result, 0, a.length);
+        System.arraycopy(b, 0, result, a.length, b.length);
+        return result;
+    }
+
     @Override
     public void run() {
         try {
@@ -85,12 +94,15 @@ public class SocketRequestHandler implements Runnable {
     public void processRequest() throws Exception {
         try {
             int available = is.available();
-            System.out.println(available);
+            System.out.println("AVAILABLE " + available);
             if (available > 0) {
                 byte[] frame = new byte[available];
                 is.read(frame, 0, available);
                 is.mark(available);
                 int isFin = 0;
+                byte opCode = (byte) (frame[0] & 0x0f);
+                System.out.println("OPCODE " + opCode);
+
 
                 //read opcode
                 switch (frame[0] & 0x0f) {
@@ -98,12 +110,15 @@ public class SocketRequestHandler implements Runnable {
                         sendPong();
                         break;
                     case 0: //continuous
+                        System.out.println("Continous frame");
                         break;
                     case 1:
                     case 2: //text
                         isFin = (frame[0] >>> 7) & 1; //not used , only one message is supported
                         if (isFin == 0) {
                             client.status = Status.READING;
+                        } else {
+                            client.status = Status.PROCESSING;
                         }
                         System.out.println("FIN : " + isFin);
                         byte[] key = null, data = null, unmaskedData = null;
@@ -129,7 +144,7 @@ public class SocketRequestHandler implements Runnable {
                                     | ((lenBytes[5] << 16) & 0x0000000000ff0000L)
                                     | ((lenBytes[6] << 8) & 0x000000000000ff00L)
                                     | (lenBytes[7] & 0x00000000000000ffL);
-                            System.out.println(dataLength);
+                            System.out.println("DataLength 127: " + dataLength);
 
                             if (dataLength > MAX_DATA_FRAME) {
                                 throw new ExceedFrameSizeLimitException("Client Exceeded the limit of the frame");
@@ -147,9 +162,14 @@ public class SocketRequestHandler implements Runnable {
                             unmaskedData[k] = (byte) (data[k] ^ key[k & 0x3]);
                         }
 
-                        String response = new String(unmaskedData);
-                        System.out.println(response);
-                        sendResponse(unmaskedData, MessageType.TEXT);
+                        combine(this.receivedData, unmaskedData);
+
+                        if (isFin == 1) {
+                            String response = new String(this.receivedData);
+                            System.out.println(response);
+                            sendResponse(unmaskedData, MessageType.TEXT);
+                        }
+
                         break;
                     case 8:
                         closeConnection();

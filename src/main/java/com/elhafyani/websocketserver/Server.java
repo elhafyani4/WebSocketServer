@@ -1,10 +1,5 @@
 package com.elhafyani.websocketserver;
 
-import com.sun.media.jfxmedia.logging.Logger;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -12,53 +7,41 @@ import java.util.UUID;
 
 /**
  * Hello world!
- *
  */
 
-@PropertySource("classpath:/config.properties}")
-@Configuration
 
-
-public class Server
-{
-    @Value("${server.port:9999}")
-    private int port;
-
-    private ServerSocket masterSocket;
-
+public class Server {
+    private static final int port = 9999;
     public int numberThread = 0;
+    private ServerSocket masterSocket;
 
     public Server() {
 
         try {
-            masterSocket = new ServerSocket(9999);
-        }catch(IOException ex){
-            Logger.logMsg(Logger.ERROR, ex.getStackTrace().toString());
+            masterSocket = new ServerSocket(port);
+        } catch (IOException ex) {
+            System.out.println("Error Creating Socket");
         }
     }
 
-    public void run(){
+    public static void main(String[] args) {
+        Server server = new Server();
+        server.run();
+    }
+
+    public void run() {
         ClientProcessor clientProcessor = new ClientProcessor();
-        Thread thread = new Thread(clientProcessor);
-        thread.start();
+        Thread clientProcessorThread = new Thread(clientProcessor);
+        clientProcessorThread.start();
 
-        while(true){
-
+        while (true) {
             try {
                 Socket socket = masterSocket.accept();
                 Client client = new Client(socket);
                 clientProcessor.clients.put(UUID.randomUUID().toString(), client);
+            } catch (IOException ex) {
 
-                System.out.println(numberThread++);
-            }catch(IOException ex){
-                Logger.logMsg(Logger.ERROR, ex.getStackTrace().toString());
             }
-
         }
-    }
-
-    public static  void main(String[] args){
-        Server server = new Server();
-        server.run();
     }
 }
