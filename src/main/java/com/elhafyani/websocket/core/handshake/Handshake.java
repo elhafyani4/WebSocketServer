@@ -1,4 +1,4 @@
-package com.elhafyani.websocketserver;
+package com.elhafyani.websocket.core.handshake;
 
 /*
  *
@@ -31,10 +31,7 @@ package com.elhafyani.websocketserver;
  */
 
 /**
- * Created by yelha on 1/28/2017.
+ * Created by yelha on 1/30/2017.
  */
-public enum Status {
-    PROCESSING,
-    READY,
-    READING
+public interface Handshake {
 }

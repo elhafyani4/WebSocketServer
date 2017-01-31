@@ -1,4 +1,4 @@
-package com.elhafyani.websocketserver;
+package com.elhafyani.websocket.core;
 
 /*
  *
@@ -30,48 +30,23 @@ package com.elhafyani.websocketserver;
  * \*---------------------------------------------------------------------------
  */
 
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.UUID;
 
 /**
- * Hello world!
+ * Created by yelhafyani on 1/27/2017.
  */
+public class Client {
 
+    public Socket socket;
 
-public class Server {
-    private static final int port = 9999;
-    public int numberThread = 0;
-    private ServerSocket masterSocket;
+    public boolean isConnected;
 
-    public Server() {
+    public Status status;
 
-        try {
-            masterSocket = new ServerSocket(port);
-        } catch (IOException ex) {
-            System.out.println("Error Creating Socket");
-        }
-    }
+    public byte[] clientData;
 
-    public static void main(String[] args) {
-        Server server = new Server();
-        server.run();
-    }
-
-    public void run() {
-        ClientProcessor clientProcessor = new ClientProcessor();
-        Thread clientProcessorThread = new Thread(clientProcessor);
-        clientProcessorThread.start();
-
-        while (true) {
-            try {
-                Socket socket = masterSocket.accept();
-                Client client = new Client(socket);
-                clientProcessor.clients.put(UUID.randomUUID().toString(), client);
-            } catch (IOException ex) {
-
-            }
-        }
+    public Client(Socket socket) {
+        this.socket = socket;
+        this.status = Status.READY;
     }
 }

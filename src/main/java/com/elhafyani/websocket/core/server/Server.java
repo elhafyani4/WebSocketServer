@@ -1,4 +1,4 @@
-package com.elhafyani.websocketserver;
+package com.elhafyani.websocket.core.server;
 
 /*
  *
@@ -31,8 +31,7 @@ package com.elhafyani.websocketserver;
  */
 
 /**
- * Created by yelhafyani on 1/27/2017.
+ * Created by yelha on 1/30/2017.
  */
-public interface MessageService {
-    String getMessage();
+public interface Server {
 }

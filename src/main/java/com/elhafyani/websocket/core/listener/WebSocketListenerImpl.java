@@ -1,4 +1,4 @@
-package com.elhafyani.websocketserver;
+package com.elhafyani.websocket.core.listener;
 
 /*
  *
@@ -31,11 +31,7 @@ package com.elhafyani.websocketserver;
  */
 
 /**
- * Created by yelha on 1/28/2017.
+ * Created by yelha on 1/30/2017.
  */
-public class Message {
-
-    private byte[] message;
-
-
+public class WebSocketListenerImpl implements WebsocketListner {
 }

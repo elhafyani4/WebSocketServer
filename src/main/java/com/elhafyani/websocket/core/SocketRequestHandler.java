@@ -1,4 +1,4 @@
-package com.elhafyani.websocketserver;
+package com.elhafyani.websocket.core;
 
 /*
  *
@@ -29,6 +29,9 @@ package com.elhafyani.websocketserver;
  *   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * \*---------------------------------------------------------------------------
  */
+
+import com.elhafyani.websocket.core.exceptions.ExceedFrameSizeLimitException;
+import com.elhafyani.websocket.core.frame.MessageType;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -99,7 +102,7 @@ public class SocketRequestHandler implements Runnable {
         try {
             if (!client.isConnected) {
                 doHandShake();
-            }else {
+            } else {
                 processRequest();
             }
 
@@ -180,9 +183,14 @@ public class SocketRequestHandler implements Runnable {
                                 throw new ExceedFrameSizeLimitException("Client Exceeded the limit of the frame");
                             }
 
+                            int read = available;
                             key = Arrays.copyOfRange(frame, 10, 14);
                             data = Arrays.copyOfRange(frame, 14, available);
                             unmaskedData = new byte[(int) dataLength];
+                            while (read <) {
+
+                            }
+
 
                         } else {
                             throw new Exception("can't understand the request");
@@ -197,6 +205,8 @@ public class SocketRequestHandler implements Runnable {
                         if (isFin == 1) {
                             String response = new String(this.receivedData);
                             System.out.println(response);
+
+
                             sendResponse(unmaskedData, MessageType.TEXT);
                         }
 
@@ -239,28 +249,28 @@ public class SocketRequestHandler implements Runnable {
         byte secondByte = 0;
 
         byte[] frameHeader;
-        if(messageLength < 126){
-            secondByte = (byte)messageLength;
-            frameHeader = new byte[] { firstByte, secondByte};
+        if (messageLength < 126) {
+            secondByte = (byte) messageLength;
+            frameHeader = new byte[]{firstByte, secondByte};
             os.write(frameHeader);
-        }else if(messageLength <= 65536){
+        } else if (messageLength <= 65536) {
             secondByte = 126;
-            frameHeader = new byte[] { firstByte, secondByte, (byte)(messageLength >>> 8), (byte)(messageLength >>> 0)};
+            frameHeader = new byte[]{firstByte, secondByte, (byte) (messageLength >>> 8), (byte) (messageLength >>> 0)};
             os.write(frameHeader);
-        }else{
+        } else {
             secondByte = 127;
-            long longLengthByte = (long)messageLength;
-            frameHeader = new byte[] {
+            long longLengthByte = (long) messageLength;
+            frameHeader = new byte[]{
                     firstByte,
-                    secondByte ,
-                    (byte)(longLengthByte >>> 56),
-                    (byte)(longLengthByte >>> 48),
-                    (byte)(longLengthByte >>> 40),
-                    (byte)(longLengthByte >>> 32),
-                    (byte)(longLengthByte >>> 24),
-                    (byte)(longLengthByte >>> 16),
-                    (byte)(longLengthByte >>> 8),
-                    (byte)(longLengthByte >>> 0)
+                    secondByte,
+                    (byte) (longLengthByte >>> 56),
+                    (byte) (longLengthByte >>> 48),
+                    (byte) (longLengthByte >>> 40),
+                    (byte) (longLengthByte >>> 32),
+                    (byte) (longLengthByte >>> 24),
+                    (byte) (longLengthByte >>> 16),
+                    (byte) (longLengthByte >>> 8),
+                    (byte) (longLengthByte >>> 0)
             };
             os.write(frameHeader);
 

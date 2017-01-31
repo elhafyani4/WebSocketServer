@@ -1,4 +1,4 @@
-package com.elhafyani.websocketserver;
+package com.elhafyani.websocket.core.core;
 
 /*
  *
@@ -30,23 +30,37 @@ package com.elhafyani.websocketserver;
  * \*---------------------------------------------------------------------------
  */
 
-import java.net.Socket;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
- * Created by yelhafyani on 1/27/2017.
+ * Unit test for simple App.
  */
-public class Client {
+public class AppTest
+        extends TestCase {
+    /**
+     * Create the test case
+     *
+     * @param testName name of the test case
+     */
+    public AppTest(String testName) {
+        super(testName);
+    }
 
-    public Socket socket;
+    /**
+     * @return the suite of tests being tested
+     */
+    public static Test suite() {
+        return new TestSuite(AppTest.class);
+    }
 
-    public boolean isConnected;
-
-    public Status status;
-
-    public byte[] clientData;
-
-    public Client(Socket socket) {
-        this.socket = socket;
-        this.status = Status.READY;
+    /**
+     * Rigourous Test :-)
+     */
+    public void testApp() {
+//        byte[] x = new byte[]{0b01111111, 0b01111111};
+//
+//        assertEquals( result ,  (short)65535);
     }
 }

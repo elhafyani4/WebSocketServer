@@ -1,4 +1,4 @@
-package com.elhafyani.websocketserver;
+package com.elhafyani.websocket.requesthandler;
 
 /*
  *
@@ -30,25 +30,12 @@ package com.elhafyani.websocketserver;
  * \*---------------------------------------------------------------------------
  */
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 /**
- * Created by yelhafyani on 1/27/2017.
+ * Created by yelha on 1/29/2017.
  */
-@Component
-public class MessagePrinter {
+public class HandleRequest implements IHandleRequest<String> {
+    @Override
+    public void Handle(String message) {
 
-    final private MessageService service;
-
-    @Autowired
-    public MessagePrinter(MessageService service) {
-        this.service = service;
     }
-
-    public void printMessage() {
-        System.out.println(this.service.getMessage());
-    }
-
-
 }
