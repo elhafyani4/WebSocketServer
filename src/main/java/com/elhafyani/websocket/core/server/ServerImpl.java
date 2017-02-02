@@ -30,17 +30,19 @@ package com.elhafyani.websocket.core.server;
  * \*---------------------------------------------------------------------------
  */
 
+import com.elhafyani.websocket.core.ChatHub;
+import com.elhafyani.websocket.core.clientsocket.Protocol;
+import com.elhafyani.websocket.core.clientsocket.WebSocketProtocolImpl;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.nio.channels.SocketChannel;
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -51,25 +53,55 @@ import java.util.logging.Logger;
  */
 public class ServerImpl implements Server {
 
-    private static final int RECEIVE_BUFFER_SIZE = 16384;
+
     private static final Logger LOGGER = Logger.getLogger(ServerImpl.class.getName());
-    private static AtomicInteger buffersQueueSize = new AtomicInteger(0);
+    private static final int NUMBER_OF_WORKING_THREADS = 2;
+    public static volatile Map<String, Class> Handlers;
+    private static AtomicInteger reusableBuffersQueueSize = new AtomicInteger(0);
     private int portId = 9999;
     private ServerSocketChannel serverSocketChannel;
     private Selector selector;
-    private LinkedBlockingQueue<ByteBuffer> buffers;
-    private List<Socket> connection;
+    private LinkedBlockingQueue<ByteBuffer> reusableBuffers;
+    private List<SocketChannel> connection;
+    private List<WorkerThread> workerThreads;
+    private int currentWorkThread = 0;
 
     public ServerImpl(int portId) {
+        Handlers = new HashMap<>();
+
+        Handlers.put("Chat", ChatHub.class);
+
+        LOGGER.info("starting the server");
         this.portId = portId;
+
+        workerThreads = new ArrayList<>(NUMBER_OF_WORKING_THREADS);
+        for (int i = 0; i < NUMBER_OF_WORKING_THREADS; i++) {
+            WorkerThread wt = new WorkerThreadImpl(i);
+            LOGGER.info("starting Thread " + i);
+            workerThreads.add(wt);
+            Thread t = new Thread((WorkerThreadImpl) wt);
+            t.start();
+        }
     }
+
+    public static void main(String[] args) {
+        Server server = new ServerImpl(81);
+        server.run();
+    }
+
+    private WorkerThread getWorkThread() {
+        WorkerThread w = workerThreads.get(currentWorkThread++ % NUMBER_OF_WORKING_THREADS);
+        LOGGER.info("Getting Thread " + w.getThreadId());
+        return w;
+    }
+
 
     public void run() {
         try {
             InetSocketAddress address = new InetSocketAddress(this.portId);
             serverSocketChannel = ServerSocketChannel.open();
             ServerSocket serverSocket = serverSocketChannel.socket();
-            serverSocket.setReceiveBufferSize(RECEIVE_BUFFER_SIZE);
+            serverSocket.setReceiveBufferSize(4096);
             selector = Selector.open();
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.bind(address);
@@ -78,24 +110,51 @@ public class ServerImpl implements Server {
             LOGGER.log(Level.FINE, "Error Starting Server ?", exception.getMessage());
         }
 
-        try {
-            selector.select();
-            Set<SelectionKey> selectionKeySet = selector.selectedKeys();
-            Iterator iterator = selectionKeySet.iterator();
 
-            while (iterator.hasNext()) {
-                SelectionKey key = (SelectionKey) iterator.next();
+        while (true) {
+            try {
+                selector.select();
+                Set<SelectionKey> selectionKeySet = selector.selectedKeys();
+                Iterator iterator = selectionKeySet.iterator();
 
-                if (key.isAcceptable()) { //new client socket
-                    key.attachment();
-                    key.channel().re
+                while (iterator.hasNext()) {
+                    SelectionKey key = (SelectionKey) iterator.next();
 
+                    iterator.remove();
+
+                    if (key.isAcceptable()) { //new client socket
+                        ServerSocketChannel serverChannel = (ServerSocketChannel) key.channel();
+                        SocketChannel socketChannel = serverChannel.accept();
+                        Protocol clientSocket = new WebSocketProtocolImpl(socketChannel);
+                        socketChannel.configureBlocking(false);
+                        key.attach(clientSocket);
+                        WorkerThread wt = getWorkThread();
+                        addClientSocketToThreadQueue(wt, clientSocket);
+
+                        continue;
+                    }
+
+                    if (key.isReadable()) {
+                        Protocol clientSocket = (Protocol) key.attachment();
+                        WorkerThread wt = getWorkThread();
+                        addClientSocketToThreadQueue(wt, clientSocket);
+                    }
                 }
 
+            } catch (IOException ex) {
+                LOGGER.log(Level.ALL, ex.getMessage());
             }
-
-        } catch (IOException ex) {
-            LOGGER.log(Level.ALL, ex.getMessage());
+//            }catch(InterruptedException ex){
+//
+//            }
         }
     }
+
+    public void addClientSocketToThreadQueue(WorkerThread wt, Protocol clientSocket) {
+        synchronized (wt.getClientSocketQueue()) {
+            wt.addClientSocketToWorkerQueue(clientSocket);
+            wt.getClientSocketQueue().notify();
+        }
+    }
+
 }

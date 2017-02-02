@@ -1,4 +1,4 @@
-package com.elhafyani.websocket.core.server;
+package com.elhafyani.websocket.core;
 
 /*
  *
@@ -30,9 +30,13 @@ package com.elhafyani.websocket.core.server;
  * \*---------------------------------------------------------------------------
  */
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 /**
- * Created by yelha on 1/30/2017.
+ * Created by yelhafyani on 2/1/2017.
  */
-public interface Server {
-    void run();
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Hub {
+    String HubName();
 }

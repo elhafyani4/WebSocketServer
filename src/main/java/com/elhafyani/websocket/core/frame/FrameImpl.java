@@ -37,7 +37,19 @@ import java.nio.ByteBuffer;
  */
 public class FrameImpl {
 
+    public boolean FIN;
+    public int payloadLength;
+    public int extendedPayLoadLength;
+    public int currentRead;
     private ByteBuffer payload;
+
+    public FrameImpl() {
+
+    }
+
+    public FrameImpl(byte[] bytes) {
+        FIN = bytes[0] >> 8 == 1;
+    }
 
     public enum MessageType {CONTINUOUS, TEXT, BINARY, CLOSE, PING, PONG}
 

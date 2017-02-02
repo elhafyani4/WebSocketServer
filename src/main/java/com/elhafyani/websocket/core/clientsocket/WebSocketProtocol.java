@@ -1,4 +1,4 @@
-package com.elhafyani.websocket.core.server;
+package com.elhafyani.websocket.core.clientsocket;
 
 /*
  *
@@ -30,9 +30,15 @@ package com.elhafyani.websocket.core.server;
  * \*---------------------------------------------------------------------------
  */
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 /**
- * Created by yelha on 1/30/2017.
+ * Created by yelhafyani on 2/2/2017.
  */
-public interface Server {
-    void run();
+public interface WebSocketProtocol extends Protocol {
+
+    boolean handleHandShake(ByteBuffer byteBuffer);
+
+    boolean handleSocketChannelInput() throws IOException;
 }

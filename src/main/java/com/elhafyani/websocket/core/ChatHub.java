@@ -1,4 +1,4 @@
-package com.elhafyani.websocket.core.server;
+package com.elhafyani.websocket.core;
 
 /*
  *
@@ -31,8 +31,13 @@ package com.elhafyani.websocket.core.server;
  */
 
 /**
- * Created by yelha on 1/30/2017.
+ * Created by yelhafyani on 2/1/2017.
  */
-public interface Server {
-    void run();
+@Hub(HubName = "Chat")
+public class ChatHub {
+
+    public void onMessage() {
+
+    }
+
 }

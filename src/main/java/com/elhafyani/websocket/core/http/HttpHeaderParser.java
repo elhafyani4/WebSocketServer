@@ -1,4 +1,4 @@
-package com.elhafyani.websocket.core.server;
+package com.elhafyani.websocket.core.http;
 
 /*
  *
@@ -30,9 +30,24 @@ package com.elhafyani.websocket.core.server;
  * \*---------------------------------------------------------------------------
  */
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Created by yelha on 1/30/2017.
+ * Created by yelhafyani on 2/1/2017.
  */
-public interface Server {
-    void run();
+public class HttpHeaderParser {
+
+    public static Map<String, String> parse(String str) {
+        char[] headerChars = str.toCharArray();
+        Map<String, String> httpHeaders = new HashMap<>();
+        String[] headerLines = str.split("\r\n");
+        for (int i = 1; i < headerLines.length; i++) {
+            String[] keyVal = headerLines[i].split(":");
+            if (keyVal.length == 2) {
+                httpHeaders.put(keyVal[0].trim(), keyVal[1].trim());
+            }
+        }
+        return httpHeaders;
+    }
 }

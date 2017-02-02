@@ -30,8 +30,31 @@ package com.elhafyani.websocket.core.handshake;
  * \*---------------------------------------------------------------------------
  */
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
+
 /**
  * Created by yelha on 1/30/2017.
  */
 public class HandshakeImpl {
+
+    private static final String HASH = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+
+    public static String getAcceptResponse(String webSocketKey) throws NoSuchAlgorithmException {
+        String key = webSocketKey + HASH;
+        String handShakeAcceptKey = Base64.getEncoder().encodeToString(sha1(key));
+        StringBuilder builder = new StringBuilder(512);
+        builder.append("HTTP/1.1 101 Switching Protocols\r\n");
+        builder.append("Connection: Upgrade\r\n");
+        builder.append("Upgrade: websocket\r\n");
+        builder.append("Sec-WebSocket-Accept: " + handShakeAcceptKey + "\r\n\r\n");
+        return builder.toString();
+    }
+
+    private static byte[] sha1(String input) throws NoSuchAlgorithmException {
+        MessageDigest mDigest = MessageDigest.getInstance("SHA1");
+        byte[] result = mDigest.digest(input.getBytes());
+        return result;
+    }
 }
