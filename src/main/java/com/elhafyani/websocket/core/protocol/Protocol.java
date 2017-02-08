@@ -1,4 +1,4 @@
-package com.elhafyani.websocket.core.server;
+package com.elhafyani.websocket.core.protocol;
 
 /*
  *
@@ -30,19 +30,23 @@ package com.elhafyani.websocket.core.server;
  * \*---------------------------------------------------------------------------
  */
 
-import com.elhafyani.websocket.core.protocol.Protocol;
+import com.elhafyani.websocket.core.protocol.http.HttpHeader;
 
-import java.util.concurrent.BlockingQueue;
+import java.nio.channels.SocketChannel;
 
 /**
  * Created by yelhafyani on 1/31/2017.
  */
-public interface WorkerThread {
+public interface Protocol {
 
-    int getThreadId();
+    boolean isConnected();
 
-    boolean addClientSocketToWorkerQueue(Protocol clientSocket);
+    void setConnected(boolean connected);
 
-    BlockingQueue<Protocol> getClientSocketQueue();
+    SocketChannel getSocketChannel();
+
+    void setSocketChannel(SocketChannel socketChannel);
+
+    void setHeaders(HttpHeader headers);
 
 }

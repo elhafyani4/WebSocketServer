@@ -1,4 +1,4 @@
-package com.elhafyani.websocket.core.server;
+package com.elhafyani.websocket.core.protocol.http;
 
 /*
  *
@@ -30,19 +30,23 @@ package com.elhafyani.websocket.core.server;
  * \*---------------------------------------------------------------------------
  */
 
-import com.elhafyani.websocket.core.protocol.Protocol;
+import com.elhafyani.websocket.core.protocol.SocketClient;
 
-import java.util.concurrent.BlockingQueue;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.nio.channels.SocketChannel;
 
 /**
- * Created by yelhafyani on 1/31/2017.
+ * Created by yelhafyani on 2/3/2017.
  */
-public interface WorkerThread {
+public class HttpSocketImpl extends SocketClient implements HttpSocket {
 
-    int getThreadId();
 
-    boolean addClientSocketToWorkerQueue(Protocol clientSocket);
+    public HttpSocketImpl(SocketChannel socketChannel) {
+        super(socketChannel);
+    }
 
-    BlockingQueue<Protocol> getClientSocketQueue();
-
+    public void handleRequest() throws FileNotFoundException {
+        FileInputStream file = new FileInputStream(System.getProperty("user.dir"));
+    }
 }

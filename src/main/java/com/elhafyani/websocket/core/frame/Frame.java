@@ -30,8 +30,33 @@ package com.elhafyani.websocket.core.frame;
  * \*---------------------------------------------------------------------------
  */
 
+import java.nio.ByteBuffer;
+
 /**
  * Created by yelha on 1/30/2017.
  */
 public interface Frame {
+    int getOpCode();
+
+    boolean isFIN();
+
+    int getPayloadLength();
+
+    int getExtendedPayLoadLength();
+
+    void setExtendedPayLoadLength(int extendedPayLoadLength);
+
+    int getCurrentRead();
+
+    void setCurrentRead(int currentRead);
+
+    void addPayload(ByteBuffer payload);
+
+    String getPayloadText();
+
+    byte[] getMaskBytes();
+
+    void setMaskBytes(byte[] bytes);
+
+    void setPayloadLength();
 }

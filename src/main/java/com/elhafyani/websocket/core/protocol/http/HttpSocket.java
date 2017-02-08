@@ -1,4 +1,4 @@
-package com.elhafyani.websocket.core.http;
+package com.elhafyani.websocket.core.protocol.http;
 
 /*
  *
@@ -30,24 +30,12 @@ package com.elhafyani.websocket.core.http;
  * \*---------------------------------------------------------------------------
  */
 
-import java.util.HashMap;
-import java.util.Map;
+import com.elhafyani.websocket.core.protocol.Protocol;
 
 /**
- * Created by yelhafyani on 2/1/2017.
+ * Created by yelhafyani on 2/3/2017.
  */
-public class HttpHeaderParser {
+public interface HttpSocket extends Protocol {
 
-    public static Map<String, String> parse(String str) {
-        char[] headerChars = str.toCharArray();
-        Map<String, String> httpHeaders = new HashMap<>();
-        String[] headerLines = str.split("\r\n");
-        for (int i = 1; i < headerLines.length; i++) {
-            String[] keyVal = headerLines[i].split(":");
-            if (keyVal.length == 2) {
-                httpHeaders.put(keyVal[0].trim(), keyVal[1].trim());
-            }
-        }
-        return httpHeaders;
-    }
+
 }

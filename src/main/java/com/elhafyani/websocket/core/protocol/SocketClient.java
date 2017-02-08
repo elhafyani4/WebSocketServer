@@ -1,4 +1,4 @@
-package com.elhafyani.websocket.core.clientsocket;
+package com.elhafyani.websocket.core.protocol;
 
 /*
  *
@@ -30,41 +30,29 @@ package com.elhafyani.websocket.core.clientsocket;
  * \*---------------------------------------------------------------------------
  */
 
-import com.elhafyani.websocket.core.frame.Frame;
-import com.elhafyani.websocket.core.handshake.HandshakeImpl;
-import com.elhafyani.websocket.core.http.HttpHeaderParser;
+import com.elhafyani.websocket.core.protocol.http.HttpHeader;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * Created by yelhafyani on 1/31/2017.
+ * Created by yelhafyani on 2/7/2017.
  */
-public class WebSocketProtocolImpl implements WebSocketProtocol {
+public abstract class SocketClient implements Protocol {
 
-    private boolean isConnected;
     private SocketChannel socketChannel;
-    private LinkedBlockingQueue<ByteBuffer> inBuffers;
-    private LinkedBlockingQueue<ByteBuffer> outBuffers;
-    private List<Frame> dataFrames;
+    private boolean isConnected;
+    private HttpHeader headers;
 
-
-    public WebSocketProtocolImpl(SocketChannel socket) {
-        this.socketChannel = socket;
+    public SocketClient(SocketChannel socketChannel) {
+        this.socketChannel = socketChannel;
     }
 
-    public boolean isConnected() {
-        return isConnected;
+    public HttpHeader getHeaders() {
+        return headers;
     }
 
-    public void setConnected(boolean connected) {
-        isConnected = connected;
+    public void setHeaders(HttpHeader headers) {
+        this.headers = headers;
     }
 
     public SocketChannel getSocketChannel() {
@@ -75,34 +63,11 @@ public class WebSocketProtocolImpl implements WebSocketProtocol {
         this.socketChannel = socketChannel;
     }
 
-    public synchronized void addFrame(Frame frame) {
-        dataFrames.add(frame);
+    public boolean isConnected() {
+        return isConnected;
     }
 
-    @Override
-    public boolean handleHandShake(ByteBuffer byteBuffer) {
-        byteBuffer.flip();
-        byte[] connectHeader = byteBuffer.array();
-        Map<String, String> httpHeaders = HttpHeaderParser.parse(new String(connectHeader));
-        try {
-            String responseHandshake = HandshakeImpl.getAcceptResponse(httpHeaders.get("Sec-WebSocket-Key"));
-            socketChannel.write(ByteBuffer.wrap(responseHandshake.getBytes(Charset.forName("UTF-8"))));
-            setConnected(true);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return true;
+    public void setConnected(boolean connected) {
+        isConnected = connected;
     }
-
-    @Override
-    public boolean handleSocketChannelInput() throws IOException {
-        ByteBuffer header = ByteBuffer.allocate(2);
-        socketChannel.read(header);
-        header.flip();
-        byte[] headerBytes = header.array();
-
-    }
-
 }

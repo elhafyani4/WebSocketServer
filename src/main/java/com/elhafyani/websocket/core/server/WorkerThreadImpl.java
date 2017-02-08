@@ -30,11 +30,13 @@ package com.elhafyani.websocket.core.server;
  * \*---------------------------------------------------------------------------
  */
 
-import com.elhafyani.websocket.core.clientsocket.Protocol;
-import com.elhafyani.websocket.core.clientsocket.WebSocketProtocol;
+import com.elhafyani.websocket.core.protocol.Protocol;
+import com.elhafyani.websocket.core.protocol.websocket.WebSocket;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Logger;
@@ -85,29 +87,51 @@ public class WorkerThreadImpl implements WorkerThread, Runnable {
                 }
 
                 LOGGER.info(this.getThreadId() + " Wakes up");
-                WebSocketProtocol clientSocket = (WebSocketProtocol) clientSocketQueue.poll();
+                Protocol clientSocket = clientSocketQueue.poll();
 
-                if (clientSocket != null && !clientSocket.isConnected()) {
-                    byteBuffer.clear();
-                    try {
-                        int bufferLen = clientSocket.getSocketChannel().read(byteBuffer);
-                        if (bufferLen > 0) {
-                            clientSocket.handleHandShake(byteBuffer);
-                        } else {
-                            clientSocket.getSocketChannel().close();
-                        }
-                    } catch (IOException ex) {
+                if (clientSocket instanceof WebSocket) {
+                    WebSocket cl = (WebSocket) clientSocket;
+                    if (clientSocket != null && !cl.isConnected()) {
+                        ((WebSocket) clientSocket).handleHandShake();
 
+
+//                        byteBuffer.clear();
+//                        try {
+//                            int bufferLen = cl.getSocketChannel().read(byteBuffer);
+//                            if (bufferLen > 0) {
+//                               // cl.handleHandShake(byteBuffer);
+//                            } else {
+//                                cl.getSocketChannel().close();
+//                            }
+//
+//                            cl.setConnected(true);
+//                        } catch (IOException ex) {
+//
+//                        }
+                        continue;
                     }
-                    continue;
+                    cl.setCurrentProcessingWorkerThread(this);
+                    cl.handleSocketChannelInput(byteBuffer);
+                } else {
+                    String ss = "HTTP/1.0 200 OK\r\n" +
+                            "Content-Type: text/html\r\n" +
+                            "Server: Apache/2.2.14 (Win32)\r\n" +
+                            "Server: Bot\r\n\r\n" +
+                            String.format("<H1>Welcome to the Ultra Mini-WebServer %s </H2>", (new Date()).toString());
+
+                    System.out.println(ss);
+                    clientSocket.getSocketChannel().write(ByteBuffer.wrap(ss.getBytes(Charset.forName("UTF-8"))));
+
+                    clientSocket.getSocketChannel().close();
+
                 }
-                clientSocket.handleSocketChannelInput();
 
             } catch (InterruptedException ex) {
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
-
 }

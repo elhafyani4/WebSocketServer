@@ -34,5 +34,5 @@ package com.elhafyani.websocket.core.server;
  * Created by yelha on 1/30/2017.
  */
 public interface Server {
-    void run();
+    void start() throws InterruptedException;
 }

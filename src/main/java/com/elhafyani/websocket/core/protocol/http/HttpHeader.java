@@ -1,4 +1,4 @@
-package com.elhafyani.websocket.core.server;
+package com.elhafyani.websocket.core.protocol.http;
 
 /*
  *
@@ -30,19 +30,47 @@ package com.elhafyani.websocket.core.server;
  * \*---------------------------------------------------------------------------
  */
 
-import com.elhafyani.websocket.core.protocol.Protocol;
-
-import java.util.concurrent.BlockingQueue;
+import java.util.Map;
 
 /**
- * Created by yelhafyani on 1/31/2017.
+ * Created by yelhafyani on 2/7/2017.
  */
-public interface WorkerThread {
+public class HttpHeader {
 
-    int getThreadId();
+    private String action;
+    private String context;
+    private String httpVersion;
+    private Map<String, String> headers;
 
-    boolean addClientSocketToWorkerQueue(Protocol clientSocket);
+    public String getAction() {
+        return action;
+    }
 
-    BlockingQueue<Protocol> getClientSocketQueue();
+    public void setAction(String action) {
+        this.action = action;
+    }
 
+    public String getContext() {
+        return context;
+    }
+
+    public void setContext(String context) {
+        this.context = context;
+    }
+
+    public String getHttpVersion() {
+        return httpVersion;
+    }
+
+    public void setHttpVersion(String httpVersion) {
+        this.httpVersion = httpVersion;
+    }
+
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(Map<String, String> headers) {
+        this.headers = headers;
+    }
 }

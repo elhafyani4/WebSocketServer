@@ -30,13 +30,13 @@ package com.elhafyani.websocket.core.server;
  * \*---------------------------------------------------------------------------
  */
 
-import com.elhafyani.websocket.core.ChatHub;
-import com.elhafyani.websocket.core.clientsocket.Protocol;
-import com.elhafyani.websocket.core.clientsocket.WebSocketProtocolImpl;
+import com.elhafyani.websocket.core.protocol.Protocol;
+import com.elhafyani.websocket.core.protocol.ProtocolFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -44,36 +44,33 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Created by yelha on 1/30/2017.
  */
+
+
 public class ServerImpl implements Server {
 
 
     private static final Logger LOGGER = Logger.getLogger(ServerImpl.class.getName());
     private static final int NUMBER_OF_WORKING_THREADS = 2;
-    public static volatile Map<String, Class> Handlers;
-    private static AtomicInteger reusableBuffersQueueSize = new AtomicInteger(0);
     private int portId = 9999;
-    private ServerSocketChannel serverSocketChannel;
     private Selector selector;
     private LinkedBlockingQueue<ByteBuffer> reusableBuffers;
     private List<SocketChannel> connection;
     private List<WorkerThread> workerThreads;
     private int currentWorkThread = 0;
+    private Set<SelectionKey> selectionKeySet;
+    private ByteBuffer byteBuffer;
 
     public ServerImpl(int portId) {
-        Handlers = new HashMap<>();
-
-        Handlers.put("Chat", ChatHub.class);
 
         LOGGER.info("starting the server");
         this.portId = portId;
-
+        byteBuffer = ByteBuffer.allocate(65536);
         workerThreads = new ArrayList<>(NUMBER_OF_WORKING_THREADS);
         for (int i = 0; i < NUMBER_OF_WORKING_THREADS; i++) {
             WorkerThread wt = new WorkerThreadImpl(i);
@@ -85,8 +82,25 @@ public class ServerImpl implements Server {
     }
 
     public static void main(String[] args) {
+        try {
+            s();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         Server server = new ServerImpl(81);
-        server.run();
+        try {
+            server.start();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void s() throws IOException {
+        Enumeration<URL> resource = ClassLoader.getSystemResources("com.elhafyani.websocket.core.server");
+        while (resource.hasMoreElements()) {
+            URL ss = resource.nextElement();
+            System.out.println(ss.getFile());
+        }
     }
 
     private WorkerThread getWorkThread() {
@@ -95,58 +109,67 @@ public class ServerImpl implements Server {
         return w;
     }
 
+    public void start() {
 
-    public void run() {
         try {
-            InetSocketAddress address = new InetSocketAddress(this.portId);
-            serverSocketChannel = ServerSocketChannel.open();
-            ServerSocket serverSocket = serverSocketChannel.socket();
-            serverSocket.setReceiveBufferSize(4096);
+            InetSocketAddress addr = new InetSocketAddress(this.portId);
+            ServerSocketChannel ssChnl = ServerSocketChannel.open();
+            ServerSocket srvSokt = ssChnl.socket();
+            srvSokt.setReceiveBufferSize(65536);
             selector = Selector.open();
-            serverSocketChannel.configureBlocking(false);
-            serverSocketChannel.bind(address);
-            SelectionKey selectionKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+            ssChnl.configureBlocking(false);
+            ssChnl.bind(addr);
+            SelectionKey selKey = ssChnl.register(selector, SelectionKey.OP_ACCEPT);
+            selKey.attach(5);
+
         } catch (IOException exception) {
             LOGGER.log(Level.FINE, "Error Starting Server ?", exception.getMessage());
         }
 
-
+        //start looping through the selectionKeys and see if any have any valid options
         while (true) {
             try {
                 selector.select();
-                Set<SelectionKey> selectionKeySet = selector.selectedKeys();
-                Iterator iterator = selectionKeySet.iterator();
+                selectionKeySet = selector.selectedKeys();
+                Iterator keys = selectionKeySet.iterator();
+                while (keys.hasNext()) {
 
-                while (iterator.hasNext()) {
-                    SelectionKey key = (SelectionKey) iterator.next();
+                    SelectionKey key = (SelectionKey) keys.next();
 
-                    iterator.remove();
+                    if (!key.isValid())
+                        continue;
 
                     if (key.isAcceptable()) { //new client socket
-                        ServerSocketChannel serverChannel = (ServerSocketChannel) key.channel();
-                        SocketChannel socketChannel = serverChannel.accept();
-                        Protocol clientSocket = new WebSocketProtocolImpl(socketChannel);
+                        LOGGER.info("Remote Connection");
+                        ServerSocketChannel sc = (ServerSocketChannel) key.channel();
+                        SocketChannel socketChannel = sc.accept();
                         socketChannel.configureBlocking(false);
-                        key.attach(clientSocket);
+                        SelectionKey clientKey = socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                        Protocol clientSocket = ProtocolFactory.GetProtocol(socketChannel, byteBuffer);
+                        clientKey.attach(clientSocket);
                         WorkerThread wt = getWorkThread();
                         addClientSocketToThreadQueue(wt, clientSocket);
-
-                        continue;
                     }
 
                     if (key.isReadable()) {
+                        LOGGER.info("Readable");
                         Protocol clientSocket = (Protocol) key.attachment();
                         WorkerThread wt = getWorkThread();
                         addClientSocketToThreadQueue(wt, clientSocket);
                     }
+                    keys.remove();
                 }
 
             } catch (IOException ex) {
                 LOGGER.log(Level.ALL, ex.getMessage());
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-//            }catch(InterruptedException ex){
-//
-//            }
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-package com.elhafyani.websocket.core.server;
+package com.elhafyani.websocket.core.protocol.http;
 
 /*
  *
@@ -30,19 +30,35 @@ package com.elhafyani.websocket.core.server;
  * \*---------------------------------------------------------------------------
  */
 
-import com.elhafyani.websocket.core.protocol.Protocol;
-
-import java.util.concurrent.BlockingQueue;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
- * Created by yelhafyani on 1/31/2017.
+ * Created by yelhafyani on 2/1/2017.
  */
-public interface WorkerThread {
+public class HttpHeaderParser {
 
-    int getThreadId();
+    public static HttpHeader parse(String str) throws Exception {
+        Map<String, String> httpHeaders = new HashMap<>();
+        String[] headerLines = str.split("\r\n");
+        HttpHeader httpHeader = new HttpHeader();
+        StringTokenizer strToken = new StringTokenizer(headerLines[0]);
+        if (strToken.countTokens() < 3) {
+            throw new Exception("Invalid Request");
+        }
+        httpHeader.setAction(strToken.nextToken());
+        httpHeader.setContext(strToken.nextToken());
+        httpHeader.setHttpVersion(strToken.nextToken());
 
-    boolean addClientSocketToWorkerQueue(Protocol clientSocket);
+        for (int i = 1; i < headerLines.length; i++) {
+            String[] keyVal = headerLines[i].split(":");
+            if (keyVal.length == 2) {
+                httpHeaders.put(keyVal[0].trim(), keyVal[1].trim());
+            }
+        }
 
-    BlockingQueue<Protocol> getClientSocketQueue();
-
+        httpHeader.setHeaders(httpHeaders);
+        return httpHeader;
+    }
 }

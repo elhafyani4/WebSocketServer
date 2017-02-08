@@ -1,4 +1,4 @@
-package com.elhafyani.websocket.core.clientsocket;
+package com.elhafyani.websocket.core.protocol;
 
 /*
  *
@@ -30,19 +30,33 @@ package com.elhafyani.websocket.core.clientsocket;
  * \*---------------------------------------------------------------------------
  */
 
+import com.elhafyani.websocket.core.protocol.http.HttpHeader;
+import com.elhafyani.websocket.core.protocol.http.HttpHeaderParser;
+import com.elhafyani.websocket.core.protocol.http.HttpSocketImpl;
+import com.elhafyani.websocket.core.protocol.websocket.WebSocketImpl;
+
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 /**
- * Created by yelhafyani on 1/31/2017.
+ * Created by yelhafyani on 2/3/2017.
  */
-public interface Protocol {
-    boolean isConnected();
+public class ProtocolFactory {
 
-    void setConnected(boolean connected);
-
-    SocketChannel getSocketChannel();
-
-    void setSocketChannel(SocketChannel socketChannel);
-
-
+    public static Protocol GetProtocol(SocketChannel socketChannel, ByteBuffer byteBuffer) throws Exception {
+        byteBuffer.clear();
+        Protocol protocol;
+        socketChannel.read(byteBuffer);
+        byteBuffer.flip();
+        byte[] connectHeader = byteBuffer.array();
+        HttpHeader httpHeaders = HttpHeaderParser.parse(new String(connectHeader));
+        if (httpHeaders.getHeaders().containsKey("Upgrade") && httpHeaders.getHeaders().get("Upgrade").equals("WebSocket")) {
+            protocol = new WebSocketImpl(socketChannel);
+        } else {
+            protocol = new HttpSocketImpl(socketChannel);
+        }
+        protocol.setHeaders(httpHeaders);
+        byteBuffer.clear();
+        return protocol;
+    }
 }
