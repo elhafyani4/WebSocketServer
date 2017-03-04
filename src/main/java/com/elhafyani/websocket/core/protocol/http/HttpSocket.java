@@ -32,10 +32,16 @@ package com.elhafyani.websocket.core.protocol.http;
 
 import com.elhafyani.websocket.core.protocol.Protocol;
 
+import java.io.FileNotFoundException;
+import java.nio.channels.SocketChannel;
+
 /**
  * Created by yelhafyani on 2/3/2017.
  */
 public interface HttpSocket extends Protocol {
 
+    void handleRequest() throws FileNotFoundException;
+
+    void getHeader(SocketChannel socketChannel) throws Exception;
 
 }

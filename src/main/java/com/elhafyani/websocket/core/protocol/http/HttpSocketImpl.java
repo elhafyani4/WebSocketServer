@@ -32,21 +32,101 @@ package com.elhafyani.websocket.core.protocol.http;
 
 import com.elhafyani.websocket.core.protocol.SocketClient;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 
 /**
  * Created by yelhafyani on 2/3/2017.
  */
 public class HttpSocketImpl extends SocketClient implements HttpSocket {
 
+    public static String userdir = System.getProperty( "user.dir" );
 
     public HttpSocketImpl(SocketChannel socketChannel) {
         super(socketChannel);
     }
 
-    public void handleRequest() throws FileNotFoundException {
-        FileInputStream file = new FileInputStream(System.getProperty("user.dir"));
+    @Override
+    public void getHeader(SocketChannel socketChannel) throws Exception {
+        ByteBuffer byteBuffer = ByteBuffer.allocate( 4096 );
+        byteBuffer.clear( );
+        socketChannel.read( byteBuffer );
+        byteBuffer.flip( );
+        byte[] connectHeader = byteBuffer.array( );
+        HttpHeader httpHeaders = HttpHeaderParser.parse( new String( connectHeader ) );
+
+        this.setHeaders( httpHeaders );
+        byteBuffer.clear( );
     }
+
+    @Override
+    public void handleRequest() {
+
+        if (getHeaders( ) == null) {
+            ByteBuffer bufferx = ByteBuffer.allocate( 4096 );
+            try {
+                getSocketChannel( ).read( bufferx );
+                bufferx.flip( );
+                String x = new String( bufferx.array( ) );
+                System.out.println( "request : " + x );
+                HttpHeader header = HttpHeaderParser.parse( x );
+                setHeaders( header );
+            } catch (IOException e) {
+                e.printStackTrace( );
+            } catch (Exception e) {
+                e.printStackTrace( );
+            }
+        }
+
+
+        try {
+            System.out.println( getHeaders( ).getContext( ) );
+            RandomAccessFile aFile = new RandomAccessFile( userdir + "\\static\\" + getHeaders( ).getContext( ), "r" );
+            FileChannel inChannel = aFile.getChannel( );
+            long fileSize = inChannel.size( );
+            String ss = "HTTP/1.0 200 OK\r\n" +
+                    "Content-Type: text/html\r\n" +
+                    "Server: Apache/2.2.14 (Win32)\r\n" +
+                    "Server: Bot\r\n" +
+                    "Keep-Alive: timeout=10, max=20\r\n";
+
+
+            getSocketChannel( ).write( ByteBuffer.wrap( ss.getBytes( Charset.forName( "UTF-8" ) ) ) );
+
+
+            ByteBuffer buffer = ByteBuffer.allocate( ( int ) fileSize );
+            inChannel.read( buffer );
+            //buffer.rewind();
+            buffer.flip( );
+            getSocketChannel( ).write( buffer );
+            inChannel.close( );
+            aFile.close( );
+            setHeaders( null );
+            getSocketChannel( ).close( );
+        } catch (FileNotFoundException exc) {
+            String response = "HTTP/1.1 404 Not Found\r\n" +
+                    "Content-Length: 22\r\n" +
+                    "Content-Type: text/html\r\n\r\n" +
+                    "<h1>404 Not Found</h1>";
+
+
+            try {
+                getSocketChannel( ).write( ByteBuffer.wrap( response.getBytes( Charset.forName( "UTF-8" ) ) ) );
+            } catch (IOException e) {
+                e.printStackTrace( );
+            }
+
+            System.out.println( exc );
+        } catch (IOException ex) {
+
+        }
+    }
+
+
+
 }

@@ -34,7 +34,6 @@ import com.elhafyani.websocket.core.frame.Frame;
 import com.elhafyani.websocket.core.frame.FrameImpl;
 import com.elhafyani.websocket.core.handshake.HandshakeImpl;
 import com.elhafyani.websocket.core.protocol.SocketClient;
-import com.elhafyani.websocket.core.server.WorkerThread;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -54,20 +53,14 @@ public class WebSocketImpl extends SocketClient implements WebSocket {
     private LinkedBlockingQueue<ByteBuffer> outBuffers;
     private Stack<Frame> dataFrames;
 
-    private WorkerThread currentProcessingWorkerThread;
+
 
     public WebSocketImpl(SocketChannel socket) {
         super(socket);
         dataFrames = new Stack<>();
     }
 
-    public WorkerThread getCurrentProcessingWorkerThread() {
-        return currentProcessingWorkerThread;
-    }
 
-    public void setCurrentProcessingWorkerThread(WorkerThread currentProcessingWorkerThread) {
-        this.currentProcessingWorkerThread = currentProcessingWorkerThread;
-    }
 
     public synchronized void addFrame(Frame frame) {
         dataFrames.add(frame);
@@ -106,7 +99,7 @@ public class WebSocketImpl extends SocketClient implements WebSocket {
                     frame.addPayload(b);
                     b.compact();
                 } else {
-                    currentProcessingWorkerThread.addClientSocketToWorkerQueue(this);
+                    getCurrentProcessingWorkerThread( ).addClientSocketToWorkerQueue( this );
                     break;
                 }
             }

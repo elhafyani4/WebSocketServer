@@ -31,6 +31,7 @@ package com.elhafyani.websocket.core.protocol;
  */
 
 import com.elhafyani.websocket.core.protocol.http.HttpHeader;
+import com.elhafyani.websocket.core.server.WorkerThread;
 
 import java.nio.channels.SocketChannel;
 
@@ -48,5 +49,10 @@ public interface Protocol {
     void setSocketChannel(SocketChannel socketChannel);
 
     void setHeaders(HttpHeader headers);
+
+    WorkerThread getCurrentProcessingWorkerThread();
+
+    void setCurrentProcessingWorkerThread(WorkerThread currentProcessingWorkerThread);
+
 
 }

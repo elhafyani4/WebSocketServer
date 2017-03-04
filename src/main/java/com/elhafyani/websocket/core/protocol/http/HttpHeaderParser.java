@@ -40,10 +40,15 @@ import java.util.StringTokenizer;
 public class HttpHeaderParser {
 
     public static HttpHeader parse(String str) throws Exception {
+        if (str == null || str.trim( ) == "") {
+            throw new Exception( "request not valid" );
+        }
+        System.out.println( "Request:" + str );
         Map<String, String> httpHeaders = new HashMap<>();
         String[] headerLines = str.split("\r\n");
         HttpHeader httpHeader = new HttpHeader();
         StringTokenizer strToken = new StringTokenizer(headerLines[0]);
+        System.out.println( headerLines[0] );
         if (strToken.countTokens() < 3) {
             throw new Exception("Invalid Request");
         }

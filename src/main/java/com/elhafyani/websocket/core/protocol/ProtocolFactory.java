@@ -44,6 +44,7 @@ import java.nio.channels.SocketChannel;
 public class ProtocolFactory {
 
     public static Protocol GetProtocol(SocketChannel socketChannel, ByteBuffer byteBuffer) throws Exception {
+        byteBuffer = ByteBuffer.allocate( 4096 );
         byteBuffer.clear();
         Protocol protocol;
         socketChannel.read(byteBuffer);

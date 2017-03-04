@@ -31,12 +31,11 @@ package com.elhafyani.websocket.core.server;
  */
 
 import com.elhafyani.websocket.core.protocol.Protocol;
+import com.elhafyani.websocket.core.protocol.http.HttpSocket;
 import com.elhafyani.websocket.core.protocol.websocket.WebSocket;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Logger;
@@ -88,6 +87,7 @@ public class WorkerThreadImpl implements WorkerThread, Runnable {
 
                 LOGGER.info(this.getThreadId() + " Wakes up");
                 Protocol clientSocket = clientSocketQueue.poll();
+                clientSocket.setCurrentProcessingWorkerThread( this );
 
                 if (clientSocket instanceof WebSocket) {
                     WebSocket cl = (WebSocket) clientSocket;
@@ -110,19 +110,19 @@ public class WorkerThreadImpl implements WorkerThread, Runnable {
 //                        }
                         continue;
                     }
-                    cl.setCurrentProcessingWorkerThread(this);
+
                     cl.handleSocketChannelInput(byteBuffer);
                 } else {
-                    String ss = "HTTP/1.0 200 OK\r\n" +
-                            "Content-Type: text/html\r\n" +
-                            "Server: Apache/2.2.14 (Win32)\r\n" +
-                            "Server: Bot\r\n\r\n" +
-                            String.format("<H1>Welcome to the Ultra Mini-WebServer %s </H2>", (new Date()).toString());
-
-                    System.out.println(ss);
-                    clientSocket.getSocketChannel().write(ByteBuffer.wrap(ss.getBytes(Charset.forName("UTF-8"))));
-
-                    clientSocket.getSocketChannel().close();
+//                    String ss = "HTTP/1.0 200 OK\r\n" +
+//                            "Content-Type: text/html\r\n" +
+//                            "Server: Apache/2.2.14 (Win32)\r\n" +
+//                            "Server: Bot\r\n\r\n" +
+//                            String.format("<H1>Welcome to the Ultra Mini-WebServer %s </H2>", (new Date()).toString());
+//
+//                    System.out.println(ss);
+//                    clientSocket.getSocketChannel().write(ByteBuffer.wrap(ss.getBytes(Charset.forName("UTF-8"))));
+                    (( HttpSocket ) clientSocket).handleRequest( );
+                    //clientSocket.getSocketChannel().close();
 
                 }
 
